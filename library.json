@@ -1,0 +1,26 @@
+{
+  "name": "Lte_SIM7600",
+  "version": "1.0",
+  "description": "Arduino library for 4G modules SIM7600 series.  Includes examples for POST and GET methods and SSL contex with server authentication.",
+  "keywords": "LTE, 4G, AT commands, AT, SIM7600A, SIM7600AS, SIM7600E ,SIM7500 ,SIM7600, SIM7600G, SIM7600X, SIMCOM, LTE-CAT1",
+  "authors":
+  [
+    {
+      "name":  "Omar Rosas",
+      "url":   "https://github.com/pomarrc",
+      "maintainer": true
+    }
+  ],
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/pomarrc/Lte_SIM7600.git"
+  },
+  "homepage": "https://github.com/pomarrc/Lte_SIM7600",
+  "export": {
+    "exclude": [ "extras/*", "tools/*" ]
+  },
+  "frameworks": [ "arduino" ],
+  "platforms": "*",
+  "examples": "examples/*/*.ino"
+}

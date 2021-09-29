@@ -1,0 +1,44 @@
+#######################################
+# Data types (KEYWORD1)
+#######################################
+LTE	KEYWORD1
+Sim7600G	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+begin    KEYWORD2
+restart    KEYWORD2                   
+powerDown    KEYWORD2	
+readTemperatureModule	KEYWORD2
+readVoltagePowerSupplyModule	KEYWORD2
+getSignalQuality    KEYWORD2	
+getModemInfo	KEYWORD2
+getRedInfo	KEYWORD2
+isLteConnected	KEYWORD2
+waitForNetwork	KEYWORD2
+isMqttClientConnected	KEYWORD2
+mqttConnect	KEYWORD2
+mqttSubscribe	KEYWORD2
+mqttPublish	KEYWORD2	
+mqttClientClean	KEYWORD2
+httpsBegin	KEYWORD2
+httpsAddHeader	KEYWORD2
+httpsPost	KEYWORD2
+httpsGetString	KEYWORD2
+httpsEnd	KEYWORD2
+setCallback	KEYWORD2
+clientLoop	KEYWORD2
+configureSSlContext	KEYWORD2 
+setCert	KEYWORD2
+certDown	KEYWORD2 
+contectSSL	KEYWORD2 
+closeSSL	KEYWORD2
+deleteCert	KEYWORD2
+listCert	KEYWORD2
+setCACert	KEYWORD2
+
+#######################################
+# Literals (LITERAL1)
+#######################################
+
