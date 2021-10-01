@@ -158,7 +158,7 @@ int8_t Sim7600G::_getRegistrationStatus(){
     return status;
   }
 /*
-* End private LteClientSecure methods
+* End private network methods
 */
 //MQTT(S)
 bool MqttClient::connected(){
