@@ -31,10 +31,8 @@
 #include <Lte_SIM7600.h>
 HardwareSerial LTE(1);
 
-#define LTE_NL "\r\n"
-static const char LTE_OK[] = "OK" LTE_NL;
-static const char LTE_ERROR[] = "ERROR" LTE_NL;
-const char*       lteNL = LTE_NL;
+
+
 
 //function declaration
 void (*punteroCallback)(String topic, String payload);
@@ -44,24 +42,14 @@ template <typename T>
 void streamWrite(T last);
 template <typename T, typename... Args>
 void streamWrite(T head, Args... tail);
-int8_t waitResponse(uint32_t timeout_ms, String& data, ConstStr r1 =  LTE_OK, ConstStr r2 = LTE_ERROR);
-int8_t waitResponse(uint32_t timeout_ms, ConstStr r1 = LTE_OK, ConstStr r2 = LTE_ERROR);
-int8_t waitResponse(ConstStr r1 = LTE_OK, ConstStr r2 = LTE_ERROR);
+int8_t waitResponse(uint32_t timeout_ms, String& data, const char* c1 =  LTE_OK, const char* c2 = LTE_ERROR);
+int8_t waitResponse(uint32_t timeout_ms, const char* c1 = LTE_OK, const char* c2 = LTE_ERROR);
+int8_t waitResponse(const char* c1 = LTE_OK, const char* c2 = LTE_ERROR);
 inline int16_t streamGetIntBefore(char lastChar);
 inline bool streamSkipUntil(const char c, const uint32_t timeout_ms = 1000L);
 
-bool _waitForNetwork(uint32_t timeout_ms = TIMEOUT_MS);
-bool _isNetworkConnected();
-int8_t getRegistrationStatus();
-bool isNetworkConnectedImpl();
 
-void _deleteCert(String nameCert);
-bool _listCert();
-void _closeSSL(int8_t sessionId = SESSION_ID);
-int8_t _contectSSL(String server, int32_t port, int8_t sessionId = SESSION_ID , int8_t sslCtxIndex = SSL_CTX_INDEX);
-void _certDown(String nameCert , String cert , int16_t lenCert );
-void _setCert(String nameSet,  String nameCertFile, int8_t sslCtxIndex = SSL_CTX_INDEX);
-void _configureSSlContext(String nameSet,  int16_t modeValue, int8_t sslCtxIndex = SSL_CTX_INDEX);
+
 
 Sim7600G::Sim7600G()
 {
@@ -74,7 +62,6 @@ void Sim7600G::begin(int baud_rate){
 }
 
 bool Sim7600G::restart(){
-  ///
   for (uint32_t start = millis(); millis() - start < 1000L;) {
       sendAT("");
       if (waitResponse(200) == 1) { 
@@ -86,10 +73,6 @@ bool Sim7600G::restart(){
       delay(100);
     }
     return false;
-    ////
-  // sendAT("+CRESET");
-  // waitResponse();
-  // delay(2000L);
 }
 
 void Sim7600G::powerDown(){
@@ -134,7 +117,7 @@ String Sim7600G::readVoltagePowerSupplyModule(){
 }
 //NETWORK LTE
 int8_t Sim7600G::isLteConnected(){  
-  return getRegistrationStatus();
+  return _getRegistrationStatus();
 }
 
 bool Sim7600G::waitForNetwork(uint32_t timeout_ms) {
@@ -149,7 +132,34 @@ String Sim7600G::getRedInfo(){
   waitResponse();
   return redInfo;
 }
-
+ /*
+* Private network methods
+*/
+bool Sim7600G::_waitForNetwork(uint32_t timeout_ms ) {
+   
+    for (uint32_t start = millis(); millis() - start < timeout_ms;) {
+      if (_isNetworkConnected()) { return true; }
+      delay(250);
+    }
+    return false;
+  }
+bool Sim7600G::_isNetworkConnected(){
+  int s = _getRegistrationStatus();
+    return (s == REG_OK_HOME || s ==  REG_OK_ROAMING);
+  }
+int8_t Sim7600G::_getRegistrationStatus(){
+    sendAT("+CREG?");
+    int8_t resp= waitResponse(1000L, "+CREG:");
+    if (resp != 1) { return -1; }
+    streamSkipUntil(','); /* Skip format (0) */
+    int status = streamGetIntBefore('\n');
+    //Serial.print("status reg  -->");Serial.println(status);
+    waitResponse();
+    return status;
+  }
+/*
+* End private LteClientSecure methods
+*/
 //MQTT(S)
 bool MqttClient::connected(){
   int response ;
@@ -341,6 +351,7 @@ void HttpsClient::end(){
    sendAT("+HTTPTERM");
    waitResponse();
 }
+
 //SSL/TLS   
 void LteClientSecure::setCACert(String root_ca, int8_t sslVersion, int8_t authMode, int8_t ignoreLocalTime, int16_t negotiateTime){
   _configureSSlContext("sslversion", sslVersion);
@@ -382,6 +393,58 @@ void LteClientSecure:: deleteCert(String nameCert){
 bool LteClientSecure:: listCert(){
    return _listCert();
 }
+ /*
+* Private LteClientSecure methods
+*/
+void LteClientSecure:: _configureSSlContext(String nameSet,  int16_t modeValue, int8_t sslCtxIndex ){
+  sendAT("+CSSLCFG=\"", nameSet,"\"", ",", String(sslCtxIndex),",", String(modeValue));
+  waitResponse();
+}
+void LteClientSecure::  _setCert(String nameSet,  String nameCertFile, int8_t sslCtxIndex){
+  sendAT("+CSSLCFG=\"", nameSet,"\"", ",", String(sslCtxIndex), ",", "\"", nameCertFile, "\"");
+  waitResponse();
+}
+void LteClientSecure:: _certDown(String nameCert , String cert , int16_t lenCert ){   
+  sendAT("+CCERTDOWN=\"" ,nameCert,"\"" , ",", String(lenCert));
+  if ( waitResponse(">") == 1) { 
+    LTE.print(cert);  // Actually send the message
+    LTE.write(static_cast<char>(0x1A));  // Terminate the message
+    LTE.flush();
+    if(waitResponse(6000L) != 1){ 
+       Serial.println("down cert ERROR" );
+      }  
+  }
+}
+int8_t LteClientSecure:: _contectSSL(String server, int32_t port, int8_t sessionId ,int8_t sslCtxIndex){
+  sendAT("+CCHSTART");
+  waitResponse();
+  sendAT("+CCHSSLCFG=", String(sessionId),",", String(sslCtxIndex));
+  waitResponse();
+  sendAT("+CCHOPEN=", String(sessionId), ",", "\"", server, "\"",",", String(port));
+  if(waitResponse(1000L, "+CCHOPEN:") != 1){ }
+  streamSkipUntil(','); /* Skip format (0) */
+  int8_t status = streamGetIntBefore('\n');
+   return status;
+}
+void LteClientSecure:: _closeSSL(int8_t sessionId){
+  sendAT("+CCHCLOSE=", String(sessionId));
+  waitResponse();
+  sendAT("+CCHSTOP");
+  waitResponse();
+}
+bool LteClientSecure:: _listCert(){
+  sendAT("+CCERTLIST");
+  if(waitResponse(1000L, "+CCERTLIST:") != 1){return false; }
+   String response = LTE.readStringUntil('\n');
+   return true;
+}
+void LteClientSecure:: _deleteCert(String nameCert){
+  sendAT("+CCERTDELE=\"", nameCert, "\"");
+  waitResponse();
+} 
+/*
+* End private LteClientSecure methods
+*/
 //FTP(S)
 
 //GNSS
@@ -396,100 +459,11 @@ bool LteClientSecure:: listCert(){
 ########################################
 */
 
- /*
-* Generic ssl functions
-*/
-void _configureSSlContext(String nameSet,  int16_t modeValue, int8_t sslCtxIndex ){
-  sendAT("+CSSLCFG=\"", nameSet,"\"", ",", String(sslCtxIndex),",", String(modeValue));
-  waitResponse();
-}
-void  _setCert(String nameSet,  String nameCertFile, int8_t sslCtxIndex){
-  sendAT("+CSSLCFG=\"", nameSet,"\"", ",", String(sslCtxIndex), ",", "\"", nameCertFile, "\"");
-  waitResponse();
-}
-void _certDown(String nameCert , String cert , int16_t lenCert ){   
-  sendAT("+CCERTDOWN=\"" ,nameCert,"\"" , ",", String(lenCert));
-  if ( waitResponse(">") == 1) { 
-    LTE.print(cert);  // Actually send the message
-    LTE.write(static_cast<char>(0x1A));  // Terminate the message
-    LTE.flush();
-    if(waitResponse(6000L) != 1){ 
-       Serial.println("down cert ERROR" );
-      }  
-  }
-}
-int8_t _contectSSL(String server, int32_t port, int8_t sessionId ,int8_t sslCtxIndex){
-  sendAT("+CCHSTART");
-  waitResponse();
-  sendAT("+CCHSSLCFG=", String(sessionId),",", String(sslCtxIndex));
-  waitResponse();
-  sendAT("+CCHOPEN=", String(sessionId), ",", "\"", server, "\"",",", String(port));
-  if(waitResponse(1000L, "+CCHOPEN:") != 1){ }
-  streamSkipUntil(','); /* Skip format (0) */
-  int8_t status = streamGetIntBefore('\n');
-   return status;
-}
-void _closeSSL(int8_t sessionId){
-  sendAT("+CCHCLOSE=", String(sessionId));
-  waitResponse();
-  sendAT("+CCHSTOP");
-  waitResponse();
-}
-bool _listCert(){
-  sendAT("+CCERTLIST");
-  if(waitResponse(1000L, "+CCERTLIST:") != 1){return false; }
-   String response = LTE.readStringUntil('\n');
-   return true;
-}
-void _deleteCert(String nameCert){
-  sendAT("+CCERTDELE=\"", nameCert, "\"");
-  waitResponse();
-} 
-
-
-
-
- /*
-* Generic network functions
-*/
-bool _waitForNetwork(uint32_t timeout_ms ) {
-   
-    for (uint32_t start = millis(); millis() - start < timeout_ms;) {
-      if (_isNetworkConnected()) { return true; }
-      delay(250);
-    }
-    return false;
-  }
- bool _isNetworkConnected(){
-  return isNetworkConnectedImpl();
-  }
-bool isNetworkConnectedImpl() {
-    int s = getRegistrationStatus();
-    return (s == REG_OK_HOME || s ==  REG_OK_ROAMING);
-}
-int8_t getRegistrationStatus(){
-    sendAT("+CREG?");
-    int8_t resp= waitResponse(1000L, "+CREG:");
-    if (resp != 1) { return -1; }
-    streamSkipUntil(','); /* Skip format (0) */
-    int status = streamGetIntBefore('\n');
-    //Serial.print("status reg  -->");Serial.println(status);
-    waitResponse();
-    return status;
-  }
-
-
-
-
-
-/*
-Utilities
-*/
 template <typename... Args>
 void sendAT(Args... cmd) {
-    streamWrite("AT", cmd..., lteNL);
+    streamWrite("AT", cmd..., "\r\n");
     LTE.flush();
-    LTE_YIELD(); 
+   delay(LTE_YIELD_MS);
   }
 template <typename T>
 void streamWrite(T last) {
@@ -500,29 +474,29 @@ void streamWrite(T head, Args... tail) {
     LTE.print(head);
     streamWrite(tail...);
   }
-int8_t waitResponse(uint32_t timeout_ms, String& data, ConstStr r1, ConstStr r2) {
+int8_t waitResponse(uint32_t timeout_ms, String& data, const char* c1, const char* c2) {
    data.reserve(64);
-    uint8_t  index       = 0;
-    uint32_t startMillis = millis();
-    do {
-      LTE_YIELD();
+   uint8_t  index       = 0;
+   uint32_t startMillis = millis();
+   do {
+      delay(LTE_YIELD_MS);
       while (LTE.available() > 0) {
-       LTE_YIELD();
+        delay(LTE_YIELD_MS);
         int8_t a = LTE.read();
-        if (a <= 0) continue;  // Skip 0x00 bytes, just in case
+        if (a <= 0) continue;  
         data += static_cast<char>(a);
-        //Serial.print("Data r1  -->");Serial.println(data);
-        if (r1 && data.endsWith(r1)) {
+        //Serial.print("Data c1  -->");Serial.println(data);
+        if (c1 && data.endsWith(c1)) {
           /*DEGUG*/
           // Serial.println("");
-          // Serial.print("Data r1 ok >>>");Serial.println(data);
+          // Serial.print("Data c1 ok >>>");Serial.println(data);
           // Serial.println("");
           /*END DEBUG*/
           index = 1;
           goto finish;
-        } else if (r2 && data.endsWith(r2)) {
-          index = 2;
-          goto finish;
+        } else if (c2 && data.endsWith(c2)) {
+            index = 2;
+            goto finish;
         } 
       }
     } while (millis() - startMillis < timeout_ms);
@@ -540,21 +514,19 @@ int8_t waitResponse(uint32_t timeout_ms, String& data, ConstStr r1, ConstStr r2)
     }
     return index;
 }
-int8_t waitResponse(uint32_t timeout_ms, ConstStr r1, ConstStr r2) {
+int8_t waitResponse(uint32_t timeout_ms, const char* c1, const char* c2) {
   String data;
-  return waitResponse(timeout_ms, data, r1, r2);
+  return waitResponse(timeout_ms, data, c1, c2);
 }
-int8_t waitResponse( ConstStr r1, ConstStr r2) {
-  return waitResponse(1000, r1, r2);
+int8_t waitResponse( const char* c1, const char* c2) {
+  return waitResponse(1000, c1, c2);
 }
 inline int16_t streamGetIntBefore(char lastChar) {
-    char   buf[7];
-    size_t bytesRead = LTE.readBytesUntil(
-        lastChar, buf, static_cast<size_t>(7));
-    // if we read 7 or more bytes, it's an overflow
+    char   buffer[7];
+    size_t bytesRead = LTE.readBytesUntil(lastChar, buffer, static_cast<size_t>(7));
     if (bytesRead && bytesRead < 7) {
-      buf[bytesRead] = '\0';
-      int16_t res    = atoi(buf);
+      buffer[bytesRead] = '\0';
+      int16_t res    = atoi(buffer);
       return res;
     }
     return -9999;
@@ -564,7 +536,7 @@ inline bool streamSkipUntil(const char c, const uint32_t timeout_ms) {
     while (millis() - startMillis < timeout_ms) {
       while (millis() - startMillis < timeout_ms &&
              !LTE.available()) {
-        LTE_YIELD();
+        delay(LTE_YIELD_MS);
       }
       if (LTE.read() == c) { return true; }
     }

@@ -1,39 +1,43 @@
 #######################################
-# Data types (KEYWORD1)
+# Datatypes (KEYWORD1)
 #######################################
-LTE	KEYWORD1
+	
 Sim7600G	KEYWORD1
+MqttClient	KEYWORD1 
+HttpsClient	KEYWORD1 
+LteClientSecure	KEYWORD1
+StreamString	KEYWORD1
+IoTicosSplitter	KEYWORD1 
+DynamicJsonDocument	KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
-begin    KEYWORD2
-restart    KEYWORD2                   
-powerDown    KEYWORD2	
+begin	KEYWORD2
+restart	KEYWORD2                   
+powerDown	KEYWORD2	
 readTemperatureModule	KEYWORD2
 readVoltagePowerSupplyModule	KEYWORD2
-getSignalQuality    KEYWORD2	
+getSignalQuality	KEYWORD2	
 getModemInfo	KEYWORD2
 getRedInfo	KEYWORD2
 isLteConnected	KEYWORD2
 waitForNetwork	KEYWORD2
-isMqttClientConnected	KEYWORD2
-mqttConnect	KEYWORD2
-mqttSubscribe	KEYWORD2
-mqttPublish	KEYWORD2	
-mqttClientClean	KEYWORD2
-httpsBegin	KEYWORD2
-httpsAddHeader	KEYWORD2
-httpsPost	KEYWORD2
-httpsGetString	KEYWORD2
-httpsEnd	KEYWORD2
+connected	KEYWORD2
+connect	KEYWORD2
+subscribe	KEYWORD2
+publish	KEYWORD2	
+clean	KEYWORD2
+addHeader	KEYWORD2
+post	KEYWORD2
+getString	KEYWORD2
+end	KEYWORD2
 setCallback	KEYWORD2
-clientLoop	KEYWORD2
-configureSSlContext	KEYWORD2 
+loop	KEYWORD2
+setContext	KEYWORD2 
 setCert	KEYWORD2
-certDown	KEYWORD2 
-contectSSL	KEYWORD2 
-closeSSL	KEYWORD2
+certDown	KEYWORD2  
+close	KEYWORD2
 deleteCert	KEYWORD2
 listCert	KEYWORD2
 setCACert	KEYWORD2
@@ -41,4 +45,25 @@ setCACert	KEYWORD2
 #######################################
 # Literals (LITERAL1)
 #######################################
-
+MQTT_TCP	LITERAL1
+MQTT_SSL	LITERAL1
+PORT_SSL	LITERAL1
+PORT_TCP	LITERAL1
+SSL_CTX_INDEX	LITERAL1
+SESSION_ID	LITERAL1
+DISABLE_CTX_SSL	LITERAL1
+ENABLE_CTX_SSL	LITERAL1
+SSL_VERSION	LITERAL1
+SERVER_AUTH	LITERAL1
+SERVER_CLIENT_AUTH	LITERAL1
+CLIENT_AUTH	LITERAL1
+ENABLE_INGORE_LOCAL_TIME	LITERAL1 
+DISENABLE_INGORE_LOCAL_TIME	LITERAL1
+NEGOTIATE_TIME	LITERAL1
+REG_NO_RESULT	LITERAL1
+REG_UNREGISTERED	LITERAL1
+REG_SEARCHING	LITERAL1
+REG_DENIED	LITERAL1
+REG_OK_HOME	LITERAL1
+REG_OK_ROAMING	LITERAL1
+REG_UNKNOWN	LITERAL1

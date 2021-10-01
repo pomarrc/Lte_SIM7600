@@ -32,21 +32,12 @@
 #ifndef Lte_SIM7600_h
 #define Lte_SIM7600_h
 
+static const char LTE_OK[] = "OK" "\r\n";
+static const char LTE_ERROR[] = "ERROR" "\r\n";
 #define SERIAL_SIZE_RX  1024
 #define BAUD_RATE_H  115200
-
-#ifndef LTE_YIELD_MS
 #define LTE_YIELD_MS 0
-#endif
-
-#ifndef LTE_YIELD
-#define LTE_YIELD() \
-  { delay(LTE_YIELD_MS); }
-#endif     
-
-
-typedef const char* ConstStr;
- #define TIMEOUT_MS 60000L
+#define TIMEOUT_MS 60000L
 // #define MQTT_TCP 0
 // #define MQTT_SSL 1
 // #define PORT_SSL 8883
@@ -91,6 +82,11 @@ enum RegStatus {
 
 class Sim7600G {
 	private:
+		bool _waitForNetwork(uint32_t timeout_ms = TIMEOUT_MS);
+		bool _isNetworkConnected();
+		int8_t _getRegistrationStatus();
+		
+
 	public:
 		Sim7600G();
 		void begin(int baud_rate);
@@ -119,6 +115,13 @@ class MqttClient {
 
 class LteClientSecure {
 	private:
+		void _deleteCert(String nameCert);
+		bool _listCert();
+		void _closeSSL(int8_t sessionId = SESSION_ID);
+		int8_t _contectSSL(String server, int32_t port, int8_t sessionId = SESSION_ID , int8_t sslCtxIndex = SSL_CTX_INDEX);
+		void _certDown(String nameCert , String cert , int16_t lenCert );
+		void _setCert(String nameSet,  String nameCertFile, int8_t sslCtxIndex = SSL_CTX_INDEX);
+		void _configureSSlContext(String nameSet,  int16_t modeValue, int8_t sslCtxIndex = SSL_CTX_INDEX);
 	public:
 		void setContext(String nameSet, int16_t modeValue, int8_t sslCtxIndex = SSL_CTX_INDEX );
 		void setCert(String nameSet,  String nameCertFile, int8_t sslCtxIndex = SSL_CTX_INDEX);
