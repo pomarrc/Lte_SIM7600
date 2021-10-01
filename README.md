@@ -20,13 +20,3 @@ Arduino library for 4G modules SIM7500/SIM7600 series.
 **Data connections**
 - TCP (HTTP, MQTT)
 - SSL/TLS (HTTPS, MQTTS)
-
-**SMS**
-- coming soon
-**Voice Calls**
-- coming soon
-
-**Location**
-- coming soon 
-
-
